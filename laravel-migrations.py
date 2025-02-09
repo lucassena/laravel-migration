@@ -33,18 +33,18 @@ types_map = {
 }
 
 # Module information
-ModuleInfo = DefineModule(name='LaravelMigration', author='Lucas Martins', version='0.9')
+ModuleInfo = DefineModule(name='LaravelMigrations', author='Lucas Martins', version='0.9')
 
 @ModuleInfo.plugin(
-    'wb.util.laravel_migration',
-    caption='Export Laravel Migration',
+    'wb.util.laravel_migrations',
+    caption='Export Laravel Migrations',
     input=[wbinputs.currentCatalog()],
     groups=['Catalog/Utilities', 'Menu/Catalog'],
     pluginMenu='Catalog'
 )
 @ModuleInfo.export(grt.INT, grt.classes.db_Catalog)
 
-def laravel_migration(catalog):
+def laravel_migrations(catalog):
     """ Generates Laravel migrations from the Workbench model """
     
     # Validação inicial do catálogo
@@ -80,7 +80,7 @@ def laravel_migration(catalog):
         mforms.Utilities.show_error("Error", error_message, "OK", "", "")
         return 1
     
-    wizard = LaravelMigrationWizard("Laravel Migration Wizard", schema_sql_dict)
+    wizard = LaravelMigrationsWizard("Laravel Migration Wizard", schema_sql_dict)
     wizard.run()
 
     return 0
@@ -386,17 +386,17 @@ return new class extends Migration
         mforms.Utilities.show_error("Export Error", error_message, "OK", "", "")
         return {}
 
-class LaravelMigrationWizard(WizardForm):
+class LaravelMigrationsWizard(WizardForm):
     """ UI to review and save migrations """
     def __init__(self, title, schema_sql_dict):
         super().__init__(None)
-        self.set_name("laravel_migration_wizard")
+        self.set_name("laravel_migrations_wizard")
         self.set_title(title)
 
         for schema_name, sql_text in schema_sql_dict.items():
-            self.add_page(LaravelMigrationWizardSchemaPage(self, schema_name, sql_text))
+            self.add_page(LaravelMigrationsWizardSchemaPage(self, schema_name, sql_text))
 
-class LaravelMigrationWizardSchemaPage(WizardPage):
+class LaravelMigrationsWizardSchemaPage(WizardPage):
     """ Wizard Page for displaying migrations """
     def __init__(self, owner, schema_name, sql_text):
         super().__init__(owner, f"Review migrations for '{schema_name}' schema:")
@@ -422,8 +422,8 @@ class LaravelMigrationWizardSchemaPage(WizardPage):
         global migrations
         schema_name = self.schema_name
 
-        print(f"Debug: Tentando salvar migrações para {schema_name}.")
-        print(f"Debug: Chaves em migrations[{schema_name}]: {migrations[schema_name].keys()}")
+        print(f"Debug: Trying to save migrations for {schema_name}.")
+        print(f"Debug: Keys in migrations[{schema_name}]: {migrations[schema_name].keys()}")
 
         if schema_name not in migrations or not migrations[schema_name]:
             mforms.Utilities.show_message("Export Error", f"No migrations found for schema: {schema_name}", "OK", "", "")
@@ -431,7 +431,7 @@ class LaravelMigrationWizardSchemaPage(WizardPage):
 
         file_chooser = mforms.newFileChooser(self.main, mforms.OpenDirectory)
 
-        print(f"Debug: Salvando {schema_name}, migrations.keys() -> {migrations.keys()}")
+        print(f"Debug: Saving {schema_name}, migrations.keys() -> {migrations.keys()}")
 
         if file_chooser.run_modal() == mforms.ResultOk:
             path = file_chooser.get_path()
@@ -464,7 +464,7 @@ class LaravelMigrationWizardSchemaPage(WizardPage):
 # Attempt to run the script via Workbench shell
 if __name__ == "__main__":
     try:
-        laravel_migration(grt.root.wb.doc.physicalModels[0].catalog)
+        laravel_migrations(grt.root.wb.doc.physicalModels[0].catalog)
     except Exception as e:
         error_message = f"Error running the plugin: {str(e)}\n{traceback.format_exc()}"
         print(error_message)
