@@ -12,6 +12,16 @@ This plugin exports a MySQL Workbench model to Laravel migrations. It generates 
 - Provides a wizard interface for reviewing and saving generated migrations.
 - Topological sorting of tables to handle foreign key dependencies.
 
+## Installation
+
+1. Clone this repository.
+2. Open MySQL Workbench.
+3. Navigate to "Scripting" > "Install Plugin/Module...".
+4. Select the `laravel-migrations.py` file.
+5. Follow the prompts to complete the installation.
+
+Now you're ready to start exporting your MySQL Workbench models to Laravel migrations! 🚀
+
 ## Usage
 
 1. Open MySQL Workbench and create a database model.
