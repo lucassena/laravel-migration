@@ -265,13 +265,26 @@ def export_schema(schema):
                     column_name = column_name.replace('_id', '')
                     column_type = ("MORPHS" if column.isNotNull == 1 else "NULLABLE_MORPHS")
 
-                # Check if the column is of type ENUM or SET and get the explicit parameters
+                if column_type not in types_map:
+                    print(f"Warning: Column '{column_name}' has an unsupported type '{column_type}'. Skipping...")
+                    continue
+
+                # Get explicit parameters based on column type
                 explicit_params = None
                 if column_type in ['ENUM', 'SET']:
                     explicit_params = f"[{column.datatypeExplicitParams.strip('()')}]" 
+                elif column_type == 'CHAR' and column.length > -1:
+                    explicit_params = str(column.length)
+                elif column_type == 'DECIMAL' and column.precision > -1 and column.scale > -1:
+                    explicit_params = f"{column.precision}, {column.scale}"
+                elif column_type == 'DOUBLE' and column.precision > -1 and column.length > -1:
+                    explicit_params = f"{column.length}, {column.precision}"
+                elif column_type == 'VARCHAR':
+                    if -1 < column.length < 255:
+                        explicit_params = str(column.length)
 
                 laravel_type = types_map.get(column_type.upper(), 'string')  # Default: string
-
+                
                 column_def = f"$table->{laravel_type}('{column_name}')" if explicit_params is None else f"$table->{laravel_type}('{column_name}', {explicit_params})"
 
                 if column.isNotNull != 1 and force_not_nullable is False:
