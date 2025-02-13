@@ -144,13 +144,46 @@ def order_tables(schema):
             for refs in remaining.values():
                 refs.difference_update(acyclic)
 
+        print(f"Debug: Topological list of tables: {sorted_tables}")
+
         return sorted_tables
+    
+    # Function to sort the tables based on their dependencies
+    def dependency_tree_sort(schema):
+        tree = {}
+        for tbl in sorted(schema.tables, key=lambda table: table.name):
+            table_references = []
+
+            for key in tbl.foreignKeys:
+                if key.name != '' and hasattr(key, 'referencedColumns') and len(key.referencedColumns) > 0 and tbl.name != key.referencedColumns[0].owner.name:
+                    table_references.append(key.referencedColumns[0].owner.name)
+
+            tree[tbl.name] = table_references
+
+        dependencies = dict((k, set(tree[k])) for k in tree)
+        result = []
+        while dependencies:
+            no_dep = set(item for value in dependencies.values() for item in value) - set(dependencies.keys()) # values not in keys (items without dep)
+            no_dep.update(table for table, references in dependencies.items() if not references) # and keys without value (items without dep)
+            result.append(no_dep) # can be done right away
+            dependencies = dict(((table, references - no_dep) for table, references in dependencies.items() if references)) # and cleaned up
+        
+        # Flatten the list of sets into a single list
+        flattened_list = [item for sublist in result for item in sublist]
+        
+        print(f"Debug: Flattened list of tables: {flattened_list}")
+        return flattened_list
     
     # Sorting the tables to ensure that referenced tables are created first
     try:
         ordered_tables = topological_sort(dependencies)
     except Exception as e:
-        print(f"Warning: Cyclic dependency detected: {str(e)}")
+        print(f"Warning: Cyclic dependency detected in topological sort: {str(e)}")
+        print("Using dependency tree sort as a fallback...")
+        ordered_tables = dependency_tree_sort(schema)
+    except Exception as e:
+        print(f"Warning: Error detected in dependency tree sort: {str(e)}")
+        print("Using arbitrary order as a fallback...")
         ordered_tables = list(dependencies.keys())  # As a fallback, process tables in arbitrary order
 
     print(f"Debug: Order of processed tables: {ordered_tables}")
