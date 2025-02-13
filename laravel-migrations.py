@@ -159,6 +159,7 @@ def order_tables(schema):
                     table_references.append(key.referencedColumns[0].owner.name)
 
             tree[tbl.name] = table_references
+            print(f"Debug: Table '{tbl.name}' references: {table_references}")
 
         dependencies = dict((k, set(tree[k])) for k in tree)
         result = []
@@ -168,8 +169,11 @@ def order_tables(schema):
             result.append(no_dep) # can be done right away
             dependencies = dict(((table, references - no_dep) for table, references in dependencies.items() if references)) # and cleaned up
         
+        # Flatten the list of sets into a single list and exclude items not in schema.tables
+        flattened_list = [item for sublist in result for item in sublist if item in [table.name for table in schema.tables]]
+
         # Flatten the list of sets into a single list
-        flattened_list = [item for sublist in result for item in sublist]
+        # flattened_list = [item for sublist in result for item in sublist]
         
         print(f"Debug: Flattened list of tables: {flattened_list}")
         return flattened_list
@@ -275,7 +279,7 @@ def export_schema(schema):
                         column_type = "INCREMENTS"
 
                 # Because MySQL Workbench doesnt works with boolean datatype
-                if column_type == "TINYINT" and 'UNSIGNED' in column.flags and column.defaultValue in [0, 1]: 
+                if column_type == "TINYINT" and 'UNSIGNED' in column.flags and column.defaultValue in ['0', '1']: 
                     column_type = "BOOLEAN"
 
                 if column_type in ['BIGINT','INT','TINYINT','MEDIUMINT','SMALLINT'] and 'UNSIGNED' in column.flags:
@@ -340,7 +344,7 @@ def export_schema(schema):
                     elif column_type == 'BOOLEAN':
                         column_def += f"->default({'TRUE' if column.defaultValue == 1 else 'FALSE'})"
                     else:
-                        column_def += f"->default({column.defaultValue})"
+                        column_def += f"->default('{column.defaultValue}')"
                 
                 if column.comment:
                     column_def += f"->comment('{column.comment}')"
@@ -507,6 +511,9 @@ class LaravelMigrationsWizardSchemaPage(WizardPage):
                         f'Could not save to file "{path}": {str(e)}',
                         'OK', '', ''
                     )
+    
+    def go_cancel(self):
+        self.main.finish()
 
 # Attempt to run the script via Workbench shell
 if __name__ == "__main__":
