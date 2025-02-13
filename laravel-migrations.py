@@ -282,7 +282,8 @@ def export_schema(schema):
                     column_type = "UNSIGNED_" + column_type
 
                 if column_name == 'remember_token' and column_type == 'VARCHAR' and column.length == 100:
-                    column_type = "REMEMBER_TOKEN"
+                    columns_sql.append(indent + f"$table->rememberToken();")
+                    continue
 
                 if (column_name == 'created_at' or column_name == 'updated_at') and (timestamps is True or timestamps_nullable is True):
                     continue
